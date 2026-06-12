@@ -1,0 +1,6 @@
+{
+  "name": "FAANG Interview Prep SaaS",
+  "description": "Comprehensive full-stack platform for SWE, PM, and Data Science candidates preparing for FAANG interviews. Feature interactive coding assignments, behavioral mocks, and real-time Gemini LLM grading feedback.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

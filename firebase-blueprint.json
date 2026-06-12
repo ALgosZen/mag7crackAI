@@ -1,0 +1,157 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account containing login info and subscription status.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Registered user email address."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the candidate."
+        },
+        "subscriptionTier": {
+          "type": "string",
+          "enum": ["free", "pro", "enterprise"],
+          "description": "Current active access subscription level."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp."
+        }
+      },
+      "required": ["email", "name", "subscriptionTier", "createdAt"]
+    },
+    "InterviewSession": {
+      "title": "Interview Session",
+      "description": "An individual interview preparation session.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the candidate conducting the session."
+        },
+        "roleTarget": {
+          "type": "string",
+          "enum": ["SWE", "PM", "DataScience"],
+          "description": "Desired job role targeted by the candidate."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Coding", "SystemDesign", "Behavioral"],
+          "description": "Type of mock interview conducted."
+        },
+        "score": {
+          "type": "integer",
+          "description": "Estimated overall score out of 100."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the interview session occurred."
+        }
+      },
+      "required": ["userId", "roleTarget", "type", "score", "createdAt"]
+    },
+    "CodingSubmission": {
+      "title": "Coding Submission",
+      "description": "A student submission to a coding algorithm question.",
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "description": "Associated interview session ID."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the candidate."
+        },
+        "problemId": {
+          "type": "string",
+          "description": "Identifier of the question being submitted."
+        },
+        "userCode": {
+          "type": "string",
+          "description": "Algorithmic code written by the user."
+        },
+        "timeComplexity": {
+          "type": "string",
+          "description": "Derived Big-O time complexity (e.g. O(N))."
+        },
+        "spaceComplexity": {
+          "type": "string",
+          "description": "Derived Big-O space complexity (e.g. O(1))."
+        },
+        "aiFeedback": {
+          "type": "string",
+          "description": "Markdown feedback and corrections suggested by Gemini."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of this submit execution."
+        }
+      },
+      "required": ["sessionId", "userId", "problemId", "userCode", "timeComplexity", "spaceComplexity", "aiFeedback", "createdAt"]
+    },
+    "BehavioralResponse": {
+      "title": "Behavioral Response",
+      "description": "Submissions to behavioral interview scenarios utilizing the STAR method.",
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "description": "Associated session ID."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the candidate."
+        },
+        "questionText": {
+          "type": "string",
+          "description": "The behavioral question prompt given to the user."
+        },
+        "audioTranscript": {
+          "type": "string",
+          "description": "Text transcript of speech or written behavioral response."
+        },
+        "gradingMetrics": {
+          "type": "string",
+          "description": "JSON assessment structure detailing results across metrics."
+        },
+        "aiFeedback": {
+          "type": "string",
+          "description": "Detailed strengths and areas of improvements from Gemini."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when response was assessed."
+        }
+      },
+      "required": ["sessionId", "userId", "questionText", "audioTranscript", "gradingMetrics", "aiFeedback", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Candidate subscriber records."
+    },
+    "/sessions/{sessionId}": {
+      "schema": "InterviewSession",
+      "description": "Mock interview session attempts."
+    },
+    "/codingSubmissions/{submissionId}": {
+      "schema": "CodingSubmission",
+      "description": "Algorithmic answers submitted for grading."
+    },
+    "/behavioralResponses/{responseId}": {
+      "schema": "BehavioralResponse",
+      "description": "Answers submitted for behavioral feedback evaluation."
+    }
+  }
+}

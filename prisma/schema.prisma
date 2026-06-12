@@ -1,0 +1,87 @@
+// prisma/schema.prisma
+//
+// This is your Prisma schema file for the FAANG Interview Prep SaaS platform.
+// Learn more in the Prisma docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum RoleTarget {
+  SWE
+  PM
+  DATA_SCIENCE
+}
+
+enum InterviewType {
+  CODING
+  SYSTEM_DESIGN
+  BEHAVIORAL
+}
+
+model User {
+  id               String             @id @default(uuid())
+  email            String             @unique
+  name             String?
+  subscriptionTier SubscriptionTier   @default(FREE)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  sessions         InterviewSession[]
+
+  @@map("users")
+}
+
+model InterviewSession {
+  id                   String                 @id @default(uuid())
+  userId               String
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleTarget           RoleTarget
+  type                 InterviewType
+  score                Int                    @default(0) // Estimated readiness score out of 100
+  createdAt            DateTime               @default(now())
+  codingSubmissions    CodingSubmission[]
+  behavioralResponses  BehavioralResponse[]
+
+  @@index([userId])
+  @@map("interview_sessions")
+}
+
+model CodingSubmission {
+  id              String           @id @default(uuid())
+  sessionId       String
+  session         InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  problemId       String // Identifier targeting the coding question
+  userCode        String           @db.Text
+  timeComplexity  String // Derived Big-O notation (e.g. O(N log N))
+  spaceComplexity String // Derived space complexity (e.g. O(N))
+  aiFeedback      String           @db.Text // Markdown assessment structured feedback by Gemini
+  createdAt       DateTime         @default(now())
+
+  @@index([sessionId])
+  @@map("coding_submissions")
+}
+
+model BehavioralResponse {
+  id              String           @id @default(uuid())
+  sessionId       String
+  session         InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionText    String           @db.Text // Prompt question (e.g. "Tell me about a time you had a conflict...")
+  audioTranscript String           @db.Text // Transcription or typed answer
+  gradingMetrics  String           @db.Text // Structuring granular metric details as JSON
+  aiFeedback      String           @db.Text // Dynamic grading breakdown & recommendations
+  createdAt       DateTime         @db.Text // Timestamp
+
+  @@index([sessionId])
+  @@map("behavioral_responses")
+}

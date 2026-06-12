@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mag7CrackApp</string>
+    <string name="title_activity_main">Mag7CrackApp</string>
+    <string name="package_name">com.alphabiz.mag7crackapp</string>
+    <string name="custom_url_scheme">com.alphabiz.mag7crackapp</string>
+</resources>
