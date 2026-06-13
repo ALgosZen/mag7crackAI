@@ -109,17 +109,7 @@ export default function Header({ user, currentView, onTierChange, onLogout, onLo
                   <span className="hidden sm:inline ml-1.5">Sign Out</span>
                 </button>
               </>
-            ) : (
-              <button
-                id="btn-header-login"
-                type="button"
-                onClick={onLoginClick}
-                className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg flex items-center space-x-1.5 transition-colors cursor-pointer"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Access Cockpit</span>
-              </button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

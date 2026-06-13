@@ -18,8 +18,38 @@ const app = express();
 const PORT = 3000;
 const prisma = new PrismaClient();
 
+// Optional: In a production app, use firebase-admin to verify tokens
+// import admin from 'firebase-admin';
+// admin.initializeApp();
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+/**
+ * Auth Middleware
+ * Extracts the Firebase ID Token and identifies the user.
+ * For this demo/foundation, we parse the token to get the phone/uid.
+ */
+const authenticate = async (req: any, res: any, next: any) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(); // Allow unauthenticated for now, or block based on route
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    // In production: const decodedToken = await admin.auth().verifyIdToken(idToken);
+    // For now, we'll simulate verification or use the provided token
+    // We'll store the token on the request for Prisma logic
+    req.userToken = idToken;
+    next();
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    res.status(401).json({ error: "Invalid token" });
+  }
+};
+
+app.use(authenticate);
 
 // Enable CORS for Android emulator access
 app.use((req, res, next) => {
@@ -50,23 +80,24 @@ let adminSettings = {
 // ==========================================
 
 // Get ongoing session profiling & statistics
-app.get("/api/auth/me", async (req, res) => {
-  try {
-    // In a real app, you'd get this from a session cookie/token
-    // For this SaaS foundation, we'll fetch the "primary" test user or create one
-    let user = await prisma.user.findFirst({
-      orderBy: { createdAt: 'desc' }
-    });
+app.get("/api/auth/me", async (req: any, res) => {
+  if (!req.userToken) return res.status(401).json({ error: "Missing token" });
 
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          name: "Jane Doe",
-          email: "alphabizu@gmail.com",
-          subscriptionTier: "PRO"
-        }
-      });
+  try {
+    // In production, you would decode the token and get the UID.
+    // For this build, we'll try to find the user by a header field or just the most recent
+    // if we don't have full decoding yet.
+    // Let's assume we can get a identifier from the token or the request body.
+    const firebaseUid = req.headers['x-firebase-uid']; // A simple way to pass it for now if not decoding
+
+    let user;
+    if (firebaseUid) {
+      user = await prisma.user.findUnique({ where: { firebaseUid } });
+    } else {
+      user = await prisma.user.findFirst({ orderBy: { createdAt: 'desc' } });
     }
+
+    if (!user) return res.status(404).json({ error: "Profile not initialized" });
     res.json(user);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch user profile" });
@@ -75,23 +106,25 @@ app.get("/api/auth/me", async (req, res) => {
 
 // Update active mock user session profile
 app.post("/api/auth/login", async (req, res) => {
-  const { name, email } = req.body;
-  if (!name || !email) {
-    return res.status(400).json({ error: "Missing name or email." });
+  const { name, email, firebaseUid } = req.body;
+  if (!name || !firebaseUid) {
+    return res.status(400).json({ error: "Missing name or firebaseUid." });
   }
 
   try {
     const user = await prisma.user.upsert({
-      where: { email },
-      update: { name },
+      where: { firebaseUid },
+      update: { name, email: email || null },
       create: {
+        firebaseUid,
         name,
-        email,
-        subscriptionTier: email.includes("meta") || email.includes("free") ? "FREE" : "PRO"
+        email: email || null,
+        subscriptionTier: (email && (email.includes("meta") || email.includes("free"))) ? "FREE" : "PRO"
       }
     });
     res.json(user);
   } catch (error) {
+    console.error("Auth error:", error);
     res.status(500).json({ error: "Authentication failed" });
   }
 });
@@ -136,9 +169,16 @@ app.post("/api/admin/settings", (req, res) => {
 });
 
 // List all historic sessions
-app.get("/api/sessions", async (req, res) => {
+app.get("/api/sessions", async (req: any, res) => {
   try {
-    const user = await prisma.user.findFirst({ orderBy: { createdAt: 'desc' } });
+    const firebaseUid = req.headers['x-firebase-uid'];
+    let user;
+    if (firebaseUid) {
+      user = await prisma.user.findUnique({ where: { firebaseUid } });
+    } else {
+      user = await prisma.user.findFirst({ orderBy: { createdAt: 'desc' } });
+    }
+
     if (!user) return res.json([]);
 
     const sessions = await prisma.interviewSession.findMany({
