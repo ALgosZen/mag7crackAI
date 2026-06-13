@@ -6,7 +6,6 @@
  */
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { evaluateCodingSubmission, evaluateBehavioralResponse, evaluateSystemDesign, evaluateResumeAndGrade } from "./src/lib/gemini.js";
@@ -395,6 +394,7 @@ app.post("/api/sessions/clear", async (req, res) => {
 // ==========================================
 async function startServer() {
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
