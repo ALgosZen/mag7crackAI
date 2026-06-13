@@ -18,6 +18,11 @@ const app = express();
 const PORT = 3000;
 const prisma = new PrismaClient();
 
+// Handle Prisma connection for serverless environments
+if (process.env.VERCEL) {
+  prisma.$connect().catch((err) => console.error("Prisma connection error:", err));
+}
+
 // Optional: In a production app, use firebase-admin to verify tokens
 // import admin from 'firebase-admin';
 // admin.initializeApp();
@@ -389,7 +394,7 @@ app.post("/api/sessions/clear", async (req, res) => {
 // 3. Vite Middleware integration
 // ==========================================
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -399,16 +404,21 @@ async function startServer() {
     // Production serve static compiled assets
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get(/^(?!\/api).+/, (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Fullstack Server ready] bound to host 0.0.0.0 on port ${PORT}`);
-  });
+  // Only start listening if not running as a Vercel Function
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`[Fullstack Server ready] bound to host 0.0.0.0 on port ${PORT}`);
+    });
+  }
 }
 
 startServer();
+
+export default app;
 
 // © 2026 Mag7Crack.ai SaaS Core. All rights preserved.
