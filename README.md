@@ -1,5 +1,19 @@
 # FAANG Interview Prep SaaS
 
+## 🛠️ Recent Fixes & Improvements (Android & Full-Stack)
+
+The following critical stability and connectivity fixes have been applied to ensure the platform runs seamlessly on both web and Android Emulator environments:
+
+1.  **Android Emulator Connectivity**: Fixed the "Synchronization Failure" by redirecting API calls to `http://10.0.2.2:3000` when running on Android.
+2.  **Protocol & Security Fix**: Switched the Android application scheme to `http` in `capacitor.config.ts` to eliminate "Mixed Content" blocks and enabled `usesCleartextTraffic` in the Android Manifest.
+3.  **Cloud Database Migration**: Successfully migrated from in-memory mock data to a persistent **Supabase (PostgreSQL)** database using Prisma ORM.
+4.  **AI Model Stabilization**: Corrected the Gemini AI integration to use `gemini-2.5-flash`, the verified working model for this environment, and implemented a centralized provider pattern.
+5.  **Cross-Origin Support (CORS)**: Implemented CORS middleware in the Express backend (`server.ts`) to allow the Android WebView to securely communicate with the local server.
+6.  **Mobile UI Accessibility**: Fixed a responsive layout bug where the "Sign Out" button was hidden on mobile devices. It is now fully visible and functional in the header.
+7.  **Environment Security**: Optimized `.gitignore` to prevent sensitive `.env` files and heavy Android build artifacts from being committed to version control.
+
+---
+
 A comprehensive, full-stack platform built for Software Engineering (SWE), Product Management (PM), and Data Science candidates preparing for rigorous technical, systems design, and behavioral FAANG interviews.
 
 This platform integrates modern diagnostic modules, fully functional full-stack workflows, real-time AI assessments powered by server-side Gemini models, and simulated webcam gaze/expression analysis.
@@ -30,8 +44,8 @@ This platform integrates modern diagnostic modules, fully functional full-stack 
 ## 📁 Architecture & Module Breakdown
 
 ### Back-End Components (`server.ts`, `src/lib/gemini.ts`)
-*   **`server.ts`:** An Express backend that implements full-stack routing, proxies Gemini API credentials safely away from the client browser, serves built static application bundles, and persists mock transaction history and session logs.
-*   **`src/lib/gemini.ts`:** Coordinates structural payload preparation with the `@google/genai` SDK. Implements specialized JSON-Schema prompts that analyze speech-to-text transcripts and execute multi-modal evaluation on optional base64 webcam frames.
+*   **`server.ts`:** An Express backend that implements full-stack routing, proxies Gemini API credentials safely away from the client browser, serves built static application bundles, and persists data to **Supabase** via Prisma.
+*   **`src/lib/gemini.ts`:** Coordinates structural payload preparation with the `@google/genai` SDK. Implements specialized JSON-Schema prompts that analyze speech-to-text transcripts and execute multi-modal evaluation on optional base64 webcam frames using the `gemini-2.5-flash` model.
 
 ### Front-End Interface Modules (`src/components/`, `src/App.tsx`)
 *   **`src/App.tsx`:** The root application orchestrator. Seamlessly controls global views and handles authentication state synchronizations.
@@ -39,7 +53,7 @@ This platform integrates modern diagnostic modules, fully functional full-stack 
 *   **`CodingMock.tsx`:** Houses the programming and system layout editor, triggering evaluations against specific problem specs.
 *   **`Dashboard.tsx`:** Coordinates user profiling metrics, tracks historic attempts, and triggers mock session navigation.
 *   **`SessionDetails.tsx`:** Displays a granular report overview of any completed mock interview session, showing the detailed STAR metric ratings and AI improvement feedback.
-*   **`AdminSettings.tsx` & `LandingPage.tsx`:** Provides restricted system controls for administrators and orchestrates responsive profile login workflows on landing.
+*   **`AdminSettings.tsx` & `LandingPage.tsx` & `api.ts`:** Provides restricted system controls, login workflows, and centralized API fetch management with emulator support.
 
 ---
 
@@ -54,3 +68,5 @@ npm run lint
 # Automatically bundles the front-end and packages the server-side architecture
 npm run build
 ```
+
+© 2026 Mag7Crack.ai SaaS Core. All rights preserved.

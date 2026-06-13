@@ -1,0 +1,12 @@
+# Block build and configuration noise
+/build/
+/.gradle/
+/.idea/
+/gradle/
+*.pro
+*.properties
+
+# Block assets and tests
+**/src/main/res/
+**/src/androidTest/
+**/src/test/

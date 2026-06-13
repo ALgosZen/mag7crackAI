@@ -20,13 +20,9 @@ export function getGemini(): GoogleGenAI {
     if (!key) {
       throw new Error("GEMINI_API_KEY environment variable is required. Please set it in Settings > Secrets.");
     }
+    console.log(`[Gemini SDK] Initializing with key starting with: ${key.substring(0, 6)}...`);
     aiInstance = new GoogleGenAI({
-      apiKey: key,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        }
-      }
+      apiKey: key
     });
   }
   return aiInstance;
@@ -73,7 +69,7 @@ export async function evaluateCodingSubmission(
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         systemInstruction,
@@ -190,7 +186,7 @@ export async function evaluateBehavioralResponse(
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: { parts },
       config: {
         systemInstruction,
@@ -260,7 +256,7 @@ export async function evaluateSystemDesign(
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: `
         Design Challenge: ${topic}
         Challenge Prompt Details: ${promptDescription}
@@ -305,7 +301,7 @@ export async function evaluateResumeAndGrade(
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: `
         Target Corporate Candidate Pipeline: ${targetCompany}
         Pasted Resume Input Text:

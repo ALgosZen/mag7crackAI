@@ -139,7 +139,7 @@ export default function SessionDetails({ sessionId, onBack }: SessionDetailsProp
             <div className="space-y-3 text-xs">
               <div className="flex justify-between border-b border-zinc-100 pb-2">
                 <span className="text-zinc-500">Verification Engine</span>
-                <span className="font-bold text-zinc-800">Gemini 3.5 LLM</span>
+                <span className="font-bold text-zinc-800">Gemini 2.5 LLM</span>
               </div>
               <div className="flex justify-between border-b border-zinc-100 pb-2">
                 <span className="text-zinc-500">Grading System</span>

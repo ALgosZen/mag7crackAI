@@ -8,14 +8,15 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
+import { PrismaClient } from "@prisma/client";
 import { evaluateCodingSubmission, evaluateBehavioralResponse, evaluateSystemDesign, evaluateResumeAndGrade } from "./src/lib/gemini.js";
-import { InterviewSession, CodingSubmission, BehavioralResponse } from "./src/types.js";
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+const prisma = new PrismaClient();
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -33,7 +34,7 @@ app.use((req, res, next) => {
 });
 
 // ==========================================
-// 1. Durably Mock database storage in memory
+// 1. Admin Settings (Keep in memory or move to DB if needed)
 // ==========================================
 let adminSettings = {
   proFee: 29.99,
@@ -44,130 +45,73 @@ let adminSettings = {
   currencyCode: "USD"
 };
 
-let paypalTransactions: Array<{
-  id: string;
-  userEmail: string;
-  userName: string;
-  tierPurchased: string;
-  amount: number;
-  currency: string;
-  paypalOrderId: string;
-  paypalPayerEmail: string;
-  status: string;
-  createdAt: string;
-}> = [
-  {
-    id: "tx_9a8df13b",
-    userEmail: "alphabizu@gmail.com",
-    userName: "Jane Doe",
-    tierPurchased: "PRO",
-    amount: 29.99,
-    currency: "USD",
-    paypalOrderId: "PAYID-MOCKORD9812401",
-    paypalPayerEmail: "buyer-jane@faangprep.ai",
-    status: "COMPLETED",
-    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
-
-let currentMockUser = {
-  id: "user_f9a81",
-  name: "Jane Doe",
-  email: "alphabizu@gmail.com",
-  subscriptionTier: "PRO" as "FREE" | "PRO" | "ENTERPRISE",
-  createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days ago
-};
-
-let sessions: InterviewSession[] = [
-  {
-    id: "session_s1",
-    userId: "user_f9a81",
-    roleTarget: "SWE",
-    type: "CODING",
-    score: 84,
-    createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString() // 12 days ago
-  },
-  {
-    id: "session_s2",
-    userId: "user_f9a81",
-    roleTarget: "SWE",
-    type: "BEHAVIORAL",
-    score: 91,
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days ago
-  },
-  {
-    id: "session_s3",
-    userId: "user_f9a81",
-    roleTarget: "PM",
-    type: "BEHAVIORAL",
-    score: 74,
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
-  }
-];
-
-let codingSubmissions: CodingSubmission[] = [
-  {
-    id: "sub_1",
-    sessionId: "session_s1",
-    userId: "user_f9a81",
-    problemId: "problem_1",
-    userCode: `def hasCycle(head):\n    slow = head\n    fast = head\n    while fast and fast.next:\n        slow = slow.next\n        fast = fast.next.next\n        if slow == fast:\n            return True\n    return False`,
-    timeComplexity: "O(N)",
-    spaceComplexity: "O(1)",
-    aiFeedback: "### Executive Summary\nExcellent implementation! You successfully used Floyd's Tortoise and Hare cycle-finding algorithm.\n\n### Key Highlights\n- **Efficiency:** The code is optimally efficient with complete linear linear traversal.\n- **Readability:** Naming choices for node traversals are standard and highly professional.",
-    createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
-
-let behavioralResponses: BehavioralResponse[] = [
-  {
-    id: "bh_1",
-    sessionId: "session_s2",
-    userId: "user_f9a81",
-    questionText: "Tell me about a time you handled conflict within your development team.",
-    audioTranscript: "During our latest release sprint, two senior devs disagreed heavily on whether we should push our database migrations immediately or delay them for further staging assessment. I set up a brief collaborative design review session where each mapped out the respective latency or regression risks. By structuring a objective pros and cons framework, we agreed to stage a parallel migration with rollback toggles, which mitigated risks and led to a flawless deployment on schedule.",
-    gradingMetrics: {
-      situationTask: 9,
-      action: 9,
-      result: 9,
-      communication: 10
-    },
-    aiFeedback: "### Comprehensive Interview Assessment\n\n- **Situation/Task critique:** High marks for structuring. You framed the conflict context clearly and defined the immediate goals.\n- **Action critique:** Highlighted proactive leadership by mediating a technical review meeting rather than imposing raw authority.\n- **Result critique:** Excellent mentions of concrete rollback safeguards.",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
-
 // ==========================================
 // 2. Full-Stack REST API endpoints
 // ==========================================
 
 // Get ongoing session profiling & statistics
-app.get("/api/auth/me", (req, res) => {
-  res.json(currentMockUser);
+app.get("/api/auth/me", async (req, res) => {
+  try {
+    // In a real app, you'd get this from a session cookie/token
+    // For this SaaS foundation, we'll fetch the "primary" test user or create one
+    let user = await prisma.user.findFirst({
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          name: "Jane Doe",
+          email: "alphabizu@gmail.com",
+          subscriptionTier: "PRO"
+        }
+      });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch user profile" });
+  }
 });
 
 // Update active mock user session profile
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   const { name, email } = req.body;
   if (!name || !email) {
     return res.status(400).json({ error: "Missing name or email." });
   }
-  currentMockUser = {
-    id: "user_" + Math.random().toString(36).substr(2, 6),
-    name,
-    email,
-    subscriptionTier: email.includes("meta") || email.includes("free") ? "FREE" : "PRO",
-    createdAt: new Date().toISOString()
-  };
-  res.json(currentMockUser);
+
+  try {
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: { name },
+      create: {
+        name,
+        email,
+        subscriptionTier: email.includes("meta") || email.includes("free") ? "FREE" : "PRO"
+      }
+    });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Authentication failed" });
+  }
 });
 
 // Update current subscribed tier
-app.post("/api/auth/tier", (req, res) => {
+app.post("/api/auth/tier", async (req, res) => {
   const { tier } = req.body;
   if (tier === "FREE" || tier === "PRO" || tier === "ENTERPRISE") {
-    currentMockUser.subscriptionTier = tier;
-    return res.json(currentMockUser);
+    try {
+      const user = await prisma.user.findFirst({ orderBy: { createdAt: 'desc' } });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: { subscriptionTier: tier }
+      });
+      return res.json(updatedUser);
+    } catch (error) {
+      return res.status(500).json({ error: "Failed to update tier" });
+    }
   }
   res.status(400).json({ error: "Invalid subscription tier parameter." });
 });
@@ -191,71 +135,46 @@ app.post("/api/admin/settings", (req, res) => {
   res.json({ success: true, settings: adminSettings });
 });
 
-// List PayPal transactions
-app.get("/api/admin/transactions", (req, res) => {
-  res.json(paypalTransactions);
-});
-
-// Handle PayPal payment checkout webhook / execution callback
-app.post("/api/paypal/checkout", (req, res) => {
-  const { orderId, payerEmail, tier, amount } = req.body;
-
-  if (!tier || !payerEmail) {
-    return res.status(400).json({ error: "Missing required checkout parameters tier or payerEmail." });
-  }
-
-  // Upgrade user's subscription tier
-  const matchedTier = String(tier).toUpperCase() as "FREE" | "PRO" | "ENTERPRISE";
-  if (matchedTier === "PRO" || matchedTier === "ENTERPRISE") {
-    currentMockUser.subscriptionTier = matchedTier;
-  }
-
-  const transactionRecord = {
-    id: `tx_${Math.random().toString(36).substr(2, 9)}`,
-    userEmail: currentMockUser.email,
-    userName: currentMockUser.name,
-    tierPurchased: tier,
-    amount: parseFloat(amount) || (tier === "PRO" ? adminSettings.proFee : adminSettings.enterpriseFee),
-    currency: adminSettings.currencyCode,
-    paypalOrderId: orderId || `PAYID-SIM-${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
-    paypalPayerEmail: payerEmail,
-    status: "COMPLETED",
-    createdAt: new Date().toISOString()
-  };
-
-  paypalTransactions.unshift(transactionRecord);
-
-  res.json({
-    success: true,
-    user: currentMockUser,
-    transaction: transactionRecord
-  });
-});
-
 // List all historic sessions
-app.get("/api/sessions", (req, res) => {
-  res.json(sessions);
+app.get("/api/sessions", async (req, res) => {
+  try {
+    const user = await prisma.user.findFirst({ orderBy: { createdAt: 'desc' } });
+    if (!user) return res.json([]);
+
+    const sessions = await prisma.interviewSession.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(sessions);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch sessions" });
+  }
 });
 
 // Create a new mock interview session
-app.post("/api/sessions", (req, res) => {
+app.post("/api/sessions", async (req, res) => {
   const { roleTarget, type } = req.body;
   
   if (!roleTarget || !type) {
     return res.status(400).json({ error: "Missing required roleTarget or type parameters." });
   }
 
-  const newSession: InterviewSession = {
-    id: `session_s${Date.now()}`,
-    userId: currentMockUser.id,
-    roleTarget,
-    type,
-    score: 0,
-    createdAt: new Date().toISOString()
-  };
+  try {
+    const user = await prisma.user.findFirst({ orderBy: { createdAt: 'desc' } });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-  sessions.unshift(newSession);
-  res.status(201).json(newSession);
+    const newSession = await prisma.interviewSession.create({
+      data: {
+        userId: user.id,
+        roleTarget,
+        type,
+        score: 0
+      }
+    });
+    res.status(201).json(newSession);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to create session" });
+  }
 });
 
 // Submit code for immediate review using Server-side Gemini API
@@ -267,13 +186,12 @@ app.post("/api/sessions/:id/submit-coding", async (req, res) => {
     return res.status(400).json({ error: "Missing problem info or userCode parameter." });
   }
 
-  const session = sessions.find(s => s.id === sessionId);
-  if (!session) {
-    return res.status(404).json({ error: "Target interview session was not found." });
-  }
-
   try {
-    // Call server-side gemini evaluation from library helper
+    const session = await prisma.interviewSession.findUnique({ where: { id: sessionId } });
+    if (!session) {
+      return res.status(404).json({ error: "Target interview session was not found." });
+    }
+
     const evaluation = await evaluateCodingSubmission(
       problemTitle || "Coding Problem",
       problemDescription || "No description provided.",
@@ -281,27 +199,25 @@ app.post("/api/sessions/:id/submit-coding", async (req, res) => {
       language || "python"
     );
 
-    // Save coding submission
-    const newSubmission: CodingSubmission = {
-      id: `sub_${Date.now()}`,
-      sessionId,
-      userId: currentMockUser.id,
-      problemId,
-      userCode,
-      timeComplexity: evaluation.timeComplexity,
-      spaceComplexity: evaluation.spaceComplexity,
-      aiFeedback: evaluation.aiFeedback,
-      createdAt: new Date().toISOString()
-    };
+    const submission = await prisma.codingSubmission.create({
+      data: {
+        sessionId,
+        problemId,
+        userCode,
+        timeComplexity: evaluation.timeComplexity,
+        spaceComplexity: evaluation.spaceComplexity,
+        aiFeedback: evaluation.aiFeedback
+      }
+    });
 
-    codingSubmissions.unshift(newSubmission);
-
-    // Update parent interview session score with calculated result
-    session.score = evaluation.score;
+    const updatedSession = await prisma.interviewSession.update({
+      where: { id: sessionId },
+      data: { score: evaluation.score }
+    });
 
     res.json({
-      submission: newSubmission,
-      session
+      submission,
+      session: updatedSession
     });
   } catch (error) {
     console.error("Express routing code submit handled crash:", error);
@@ -318,35 +234,32 @@ app.post("/api/sessions/:id/submit-behavioral", async (req, res) => {
     return res.status(400).json({ error: "Missing questionText or audioTranscript." });
   }
 
-  const session = sessions.find(s => s.id === sessionId);
-  if (!session) {
-    return res.status(404).json({ error: "Target interview session outline was not found." });
-  }
-
   try {
-    // Call server-side gemini evaluation with optional camera face image
+    const session = await prisma.interviewSession.findUnique({ where: { id: sessionId } });
+    if (!session) {
+      return res.status(404).json({ error: "Target interview session outline was not found." });
+    }
+
     const evaluation = await evaluateBehavioralResponse(questionText, audioTranscript, faceImage);
 
-    const newResponse: BehavioralResponse = {
-      id: `bh_${Date.now()}`,
-      sessionId,
-      userId: currentMockUser.id,
-      questionText,
-      audioTranscript,
-      gradingMetrics: evaluation.gradingMetrics,
-      aiFeedback: evaluation.aiFeedback,
-      createdAt: new Date().toISOString(),
-      faceImage: faceImage || undefined
-    };
+    const response = await prisma.behavioralResponse.create({
+      data: {
+        sessionId,
+        questionText,
+        audioTranscript,
+        gradingMetrics: JSON.stringify(evaluation.gradingMetrics),
+        aiFeedback: evaluation.aiFeedback
+      }
+    });
 
-    behavioralResponses.unshift(newResponse);
-
-    // Update parent interview session score
-    session.score = evaluation.score;
+    const updatedSession = await prisma.interviewSession.update({
+      where: { id: sessionId },
+      data: { score: evaluation.score }
+    });
 
     res.json({
-      response: newResponse,
-      session
+      response,
+      session: updatedSession
     });
   } catch (error) {
     console.error("Express routing behavioral submit handled crash:", error);
@@ -389,29 +302,39 @@ app.post("/api/sessions/enterprise-resume/evaluate", async (req, res) => {
 });
 
 // Get specific details of a session (including submissions or answers)
-app.get("/api/sessions/:id/details", (req, res) => {
+app.get("/api/sessions/:id/details", async (req, res) => {
   const { id: sessionId } = req.params;
-  const session = sessions.find(s => s.id === sessionId);
-  if (!session) {
-    return res.status(404).json({ error: "Session not found." });
+  try {
+    const session = await prisma.interviewSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        codingSubmissions: true,
+        behavioralResponses: true
+      }
+    });
+
+    if (!session) {
+      return res.status(404).json({ error: "Session not found." });
+    }
+
+    res.json({
+      session,
+      codingSubmissions: session.codingSubmissions,
+      behavioralResponses: session.behavioralResponses
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch session details" });
   }
-
-  const codings = codingSubmissions.filter(c => c.sessionId === sessionId);
-  const behaviors = behavioralResponses.filter(b => b.sessionId === sessionId);
-
-  res.json({
-    session,
-    codingSubmissions: codings,
-    behavioralResponses: behaviors
-  });
 });
 
 // Clear all sessions (for easy reset / demo testing)
-app.post("/api/sessions/clear", (req, res) => {
-  sessions = [];
-  codingSubmissions = [];
-  behavioralResponses = [];
-  res.json({ success: true });
+app.post("/api/sessions/clear", async (req, res) => {
+  try {
+    await prisma.interviewSession.deleteMany({});
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to clear sessions" });
+  }
 });
 
 
@@ -442,4 +365,3 @@ async function startServer() {
 startServer();
 
 // © 2026 Mag7Crack.ai SaaS Core. All rights preserved.
-

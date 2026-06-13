@@ -4,8 +4,9 @@
 // Learn more in the Prisma docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -80,7 +81,7 @@ model BehavioralResponse {
   audioTranscript String           @db.Text // Transcription or typed answer
   gradingMetrics  String           @db.Text // Structuring granular metric details as JSON
   aiFeedback      String           @db.Text // Dynamic grading breakdown & recommendations
-  createdAt       DateTime         @db.Text // Timestamp
+  createdAt       DateTime         @default(now())
 
   @@index([sessionId])
   @@map("behavioral_responses")

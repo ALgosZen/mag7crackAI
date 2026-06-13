@@ -50,7 +50,7 @@ export default function CodingMock({ session, onBack, onSubmitResults }: CodingM
   const loaderMessages = [
     "Establishing full-stack sandboxed evaluation...",
     "Compiling code AST and lexical structure...",
-    "Spinning up Gemini 3.5 AI Senior Interviewer...",
+    "Spinning up Gemini 2.5 AI Senior Interviewer...",
     "Assessing algorithmic complexity invariants...",
     "Validating edge-case inputs (null values, long arrays)...",
     "Writing comprehensive markdown assessment reports..."
