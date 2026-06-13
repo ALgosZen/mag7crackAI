@@ -55,7 +55,7 @@ app.use(authenticate);
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-firebase-uid");
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
   } else {
@@ -107,25 +107,32 @@ app.get("/api/auth/me", async (req: any, res) => {
 // Update active mock user session profile
 app.post("/api/auth/login", async (req, res) => {
   const { name, email, firebaseUid } = req.body;
-  if (!name || !firebaseUid) {
-    return res.status(400).json({ error: "Missing name or firebaseUid." });
+
+  if (!firebaseUid) {
+    return res.status(400).json({ error: "Missing firebaseUid." });
   }
+
+  // Fallback name if somehow empty
+  const activeName = name || "New Candidate";
 
   try {
     const user = await prisma.user.upsert({
       where: { firebaseUid },
-      update: { name, email: email || null },
+      update: {
+        name: activeName,
+        email: email || null
+      },
       create: {
         firebaseUid,
-        name,
+        name: activeName,
         email: email || null,
         subscriptionTier: (email && (email.includes("meta") || email.includes("free"))) ? "FREE" : "PRO"
       }
     });
     res.json(user);
   } catch (error) {
-    console.error("Auth error:", error);
-    res.status(500).json({ error: "Authentication failed" });
+    console.error("Auth error during upsert:", error);
+    res.status(500).json({ error: "Authentication failed during profile setup" });
   }
 });
 

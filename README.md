@@ -5,13 +5,15 @@
 The following critical stability, connectivity, and authentication fixes have been applied:
 
 1.  **Unified Native Authentication Bridge**: Implemented a secure auth handshake combining **Firebase Auth** (Phone SMS/OTP) and **Supabase**. Firebase handles initial identity verification, while the Supabase client dynamically inherits trust via JWT injection for database security (RLS).
-2.  **Multi-Step Onboarding UI**: Added high-fidelity **Phone Login** (with SMS validation) and **Profile Completion** screens, including a native-style toggle for **Face ID / Biometric recognition**.
-3.  **Robust Phone Validation**: Enhanced the SMS login logic to automatically clean input, handle country codes (+), and prevent "Phone Number Too Short" errors with better UX feedback.
-4.  **Android Emulator Connectivity**: Fixed the "Synchronization Failure" by redirecting API calls to `http://10.0.2.2:3000` when running on Android.
-5.  **Protocol & Security Fix**: Switched the Android application scheme to `http` in `capacitor.config.ts` to eliminate "Mixed Content" blocks and enabled `usesCleartextTraffic` in the Android Manifest.
-6.  **Cloud Database Migration**: Successfully migrated from in-memory mock data to a persistent **Supabase (PostgreSQL)** database using Prisma ORM.
-7.  **AI Model Stabilization**: Corrected the Gemini AI integration to use `gemini-2.5-flash`, the verified working model for this environment.
-8.  **Environment Security**: Optimized `.gitignore` to prevent sensitive `.env` files and heavy Android build artifacts from being committed to version control.
+2.  **Advanced UID Tracking**: Upgraded the architecture to identify users via **Firebase UID** in the database. This ensures persistent profile matching even when optional fields (like email) are not provided.
+3.  **Development Mode Shortcuts**: Added a `VITE_APP_MODE="DEV"` toggle that auto-prepopulates test phone numbers and OTPs. Includes a specialized "faded" UI style for auto-filled credentials to distinguish them from manual entry.
+4.  **Lightweight Onboarding UI**: Implemented a streamlined **Profile Initialization** form requesting only **First Name** and making the **Email Address optional** (intended for notifications).
+5.  **Robust Phone Validation**: Enhanced the SMS login logic to automatically clean input, handle country codes (+), and prevent "Phone Number Too Short" errors with better UX feedback.
+6.  **Android Emulator Connectivity**: Fixed the "Synchronization Failure" by redirecting API calls to `http://10.0.2.2:3000` when running on Android.
+7.  **Protocol & Security Fix**: Switched the Android application scheme to `http` in `capacitor.config.ts` to eliminate "Mixed Content" blocks and enabled `usesCleartextTraffic` in the Android Manifest.
+8.  **Cloud Database Migration**: Successfully migrated from in-memory mock data to a persistent **Supabase (PostgreSQL)** database using Prisma ORM.
+9.  **AI Model Stabilization**: Corrected the Gemini AI integration to use `gemini-2.5-flash`, the verified working model for this environment.
+10. **Environment Security**: Optimized `.gitignore` to prevent sensitive `.env` files and heavy Android build artifacts from being committed to version control.
 
 ---
 

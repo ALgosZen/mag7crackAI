@@ -33,9 +33,11 @@ export default function Header({ user, currentView, onTierChange, onLogout, onLo
               <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-purple-700 via-indigo-600 to-indigo-800 bg-clip-text text-transparent">
                 Mag7Crack.ai
               </span>
-              <span className="ml-1.5 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full uppercase tracking-wider hidden sm:inline-block">
-                SaaS Foundation
-              </span>
+              {import.meta.env.VITE_APP_MODE === "DEV" && (
+                <span className="ml-1.5 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full uppercase tracking-wider hidden sm:inline-block">
+                  BETA-TEST
+                </span>
+              )}
             </div>
           </div>
 
@@ -54,7 +56,34 @@ export default function Header({ user, currentView, onTierChange, onLogout, onLo
               >
                 Dashboard
               </button>
-              {user.email.toLowerCase().includes("admin") && (
+
+              <button
+                id="tab-pro-workspace"
+                type="button"
+                onClick={() => onViewChange("PRO_WORKSPACE")}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  currentView === "PRO_WORKSPACE"
+                    ? "bg-zinc-100 text-zinc-950 font-black border border-zinc-200"
+                    : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50"
+                }`}
+              >
+                Pro Features
+              </button>
+
+              <button
+                id="tab-enterprise-hub"
+                type="button"
+                onClick={() => onViewChange("ENTERPRISE_HUB")}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  currentView === "ENTERPRISE_HUB"
+                    ? "bg-zinc-100 text-zinc-950 font-black border border-zinc-200"
+                    : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50"
+                }`}
+              >
+                Enterprise Hub
+              </button>
+
+              {user.email && user.email.toLowerCase().includes("admin") && (
                 <button
                   id="tab-admin-settings"
                   type="button"

@@ -44,11 +44,11 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (fUser) => {
       if (fUser) {
-        setFirebaseUser(fUser);
         const token = await fUser.getIdToken();
+        setFirebaseUser(fUser);
         setIdToken(token);
         // If we have a firebase user but no app user, we might need signup
-        await syncWorkspaceData(token);
+        await syncWorkspaceData(token, fUser.uid);
       } else {
         setFirebaseUser(null);
         setIdToken(null);
@@ -61,15 +61,16 @@ export default function App() {
   }, []);
 
   // 2. Initial State Syncing
-  const syncWorkspaceData = async (token?: string) => {
+  const syncWorkspaceData = async (token?: string, forceUid?: string) => {
     const activeToken = token || idToken;
+    const activeUid = forceUid || firebaseUser?.uid;
     if (!activeToken) return;
 
     try {
       setIsSyncing(true);
       const headers: any = { Authorization: `Bearer ${activeToken}` };
-      if (firebaseUser) {
-        headers['x-firebase-uid'] = firebaseUser.uid;
+      if (activeUid) {
+        headers['x-firebase-uid'] = activeUid;
       }
 
       const uRes = await apiFetch("/api/auth/me", { headers });
@@ -110,7 +111,6 @@ export default function App() {
       const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "Authorization": `Bearer ${idToken}`
         },
         body: JSON.stringify({
@@ -119,7 +119,11 @@ export default function App() {
           firebaseUid: firebaseUser.uid
         })
       });
-      if (!res.ok) throw new Error("Failed to register profile.");
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to register profile.");
+      }
       const activeUser = await res.json();
       setUser(activeUser);
       setAuthStep("AUTHENTICATED");
