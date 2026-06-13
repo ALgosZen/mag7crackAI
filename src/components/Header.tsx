@@ -43,12 +43,12 @@ export default function Header({ user, currentView, onTierChange, onLogout, onLo
 
           {/* Middle Navigation Tabs (Only if logged in) */}
           {user && (
-            <nav className="hidden md:flex space-x-1" id="header-nav-tabs">
+            <nav className="flex items-center space-x-1 overflow-x-auto scrollbar-hide px-2 no-scrollbar" id="header-nav-tabs">
               <button
                 id="tab-dashboard"
                 type="button"
                 onClick={() => onViewChange("DASHBOARD")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                className={`px-2.5 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                   currentView === "DASHBOARD" || currentView === "CODING" || currentView === "BEHAVIORAL" || currentView === "DETAILS"
                     ? "bg-zinc-100 text-zinc-950 font-black border border-zinc-200"
                     : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50"
@@ -61,7 +61,7 @@ export default function Header({ user, currentView, onTierChange, onLogout, onLo
                 id="tab-pro-workspace"
                 type="button"
                 onClick={() => onViewChange("PRO_WORKSPACE")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                className={`px-2.5 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                   currentView === "PRO_WORKSPACE"
                     ? "bg-zinc-100 text-zinc-950 font-black border border-zinc-200"
                     : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50"
@@ -74,7 +74,7 @@ export default function Header({ user, currentView, onTierChange, onLogout, onLo
                 id="tab-enterprise-hub"
                 type="button"
                 onClick={() => onViewChange("ENTERPRISE_HUB")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                className={`px-2.5 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                   currentView === "ENTERPRISE_HUB"
                     ? "bg-zinc-100 text-zinc-950 font-black border border-zinc-200"
                     : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50"
@@ -88,7 +88,7 @@ export default function Header({ user, currentView, onTierChange, onLogout, onLo
                   id="tab-admin-settings"
                   type="button"
                   onClick={() => onViewChange("ADMIN_SETTINGS")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                     currentView === "ADMIN_SETTINGS"
                       ? "bg-zinc-200 text-zinc-950 font-black border border-zinc-300"
                       : "text-zinc-500 hover:text-zinc-805 hover:bg-zinc-50"
