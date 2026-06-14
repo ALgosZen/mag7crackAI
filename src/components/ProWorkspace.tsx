@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from "react";
 import { User, SubscriptionTier } from "../types.js";
 import PayPalButtonSim from "./PayPalButtonSim.tsx";
-import { Sparkles, Shield, Rocket, HelpCircle, Code, Server, MessageSquare, ArrowRight, Loader2, Play } from "lucide-react";
+import { Sparkles, Shield, Rocket, HelpCircle, Code, Server, MessageSquare, ArrowRight, Loader2, Play, CreditCard } from "lucide-react";
 import Markdown from "react-markdown";
 import { apiFetch } from "../api.ts";
 
@@ -135,6 +135,28 @@ Failed to compile system architecture schema via Gemini. Please verify Gemini AP
     }
   };
 
+  // Handle Stripe Checkout Redirection
+  const handleStripeCheckout = async () => {
+    try {
+      const res = await apiFetch("/api/checkout/stripe/create-session", {
+        method: "POST",
+        body: JSON.stringify({
+          tier: "PRO",
+          firebaseUid: user.firebaseUid
+        })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || "Failed to create checkout session.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Stripe Checkout is currently unavailable. Please use PayPal.");
+    }
+  };
+
   // 1. RENDER PAYWALL IF USER IS FREE
   if (user.subscriptionTier === "FREE") {
     return (
@@ -192,7 +214,22 @@ Failed to compile system architecture schema via Gemini. Please verify Gemini AP
               <p className="text-[11px] text-zinc-500">Includes secure checkout, instant activation, and life-long dashboard persistence.</p>
             </div>
 
-            <div className="border-t border-zinc-100 pt-4">
+            <div className="space-y-3 pt-4 border-t border-zinc-100">
+              {/* Stripe Credit Card Button */}
+              <button
+                onClick={handleStripeCheckout}
+                className="w-full bg-[#6366f1] hover:bg-[#4f46e5] text-white font-bold py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Pay with Card (Stripe)</span>
+              </button>
+
+              <div className="flex items-center space-x-2">
+                <div className="h-px bg-zinc-200 flex-1"></div>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase">Or</span>
+                <div className="h-px bg-zinc-200 flex-1"></div>
+              </div>
+
               <PayPalButtonSim 
                 amount={proPrice} 
                 tierSymbol="PRO" 

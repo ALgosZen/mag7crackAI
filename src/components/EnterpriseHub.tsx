@@ -67,6 +67,27 @@ export default function EnterpriseHub({ user, onTierChange }: EnterpriseHubProps
     await onTierChange("ENTERPRISE");
   };
 
+  const handleStripeCheckout = async () => {
+    try {
+      const res = await apiFetch("/api/checkout/stripe/create-session", {
+        method: "POST",
+        body: JSON.stringify({
+          tier: "ENTERPRISE",
+          firebaseUid: user.firebaseUid
+        })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || "Failed to create checkout session.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Stripe Checkout is currently unavailable. Please use PayPal.");
+    }
+  };
+
   const handleScanResume = async () => {
     if (!resumeText.trim()) {
       alert("Please paste your draft resume text to scan.");
@@ -160,7 +181,22 @@ Please verify your Gemini key settings relative to this instance and try again.`
               <p className="text-[11px] text-zinc-500">Corporate seat containing global sandbox privileges for mock candidates.</p>
             </div>
 
-            <div className="border-t border-zinc-100 pt-4">
+            <div className="space-y-3 pt-4 border-t border-zinc-100">
+              {/* Stripe Credit Card Button */}
+              <button
+                onClick={handleStripeCheckout}
+                className="w-full bg-[#6366f1] hover:bg-[#4f46e5] text-white font-bold py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Pay with Card (Stripe)</span>
+              </button>
+
+              <div className="flex items-center space-x-2">
+                <div className="h-px bg-zinc-200 flex-1"></div>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase">Or</span>
+                <div className="h-px bg-zinc-200 flex-1"></div>
+              </div>
+
               <PayPalButtonSim 
                 amount={enterprisePrice} 
                 tierSymbol="ENTERPRISE" 
