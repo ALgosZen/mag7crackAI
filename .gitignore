@@ -12,6 +12,8 @@ node_modules/
 .env.*
 !.env.example
 env-backup.txt
+.env*.local
+.env*.copy
 
 # IDEs and Editors
 .vscode/

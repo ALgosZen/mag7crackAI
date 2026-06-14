@@ -3,24 +3,38 @@ export const getApiUrl = (path: string) => {
   const isAndroid = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && !window.location.port;
   const isCapacitorAndroid = isAndroid || (window as any).Capacitor?.getPlatform() === 'android';
 
-  // If we are in development mode on Android, point to the local machine
   if (isCapacitorAndroid && import.meta.env.VITE_APP_MODE === 'DEV') {
     return `http://10.0.2.2:3000${path}`;
   }
 
-  // If we are on mobile (Android/iOS) and have a production backend URL defined, use it
   if (isCapacitorAndroid && import.meta.env.VITE_BACKEND_URL) {
     return `${import.meta.env.VITE_BACKEND_URL}${path}`;
   }
 
-  // For Web (Vercel or localhost), relative paths work best
   return path;
 };
 
+// Global storage for the current user's auth context to simplify fetch calls
+let currentIdToken: string | null = null;
+let currentFirebaseUid: string | null = null;
+
+export const setAuthContext = (token: string | null, uid: string | null) => {
+  currentIdToken = token;
+  currentFirebaseUid = uid;
+};
+
 export const apiFetch = (path: string, options: RequestInit = {}) => {
-  const defaultHeaders = {
+  const defaultHeaders: any = {
     'Content-Type': 'application/json',
   };
+
+  // Automatically inject Auth headers if they exist
+  if (currentIdToken) {
+    defaultHeaders['Authorization'] = `Bearer ${currentIdToken}`;
+  }
+  if (currentFirebaseUid) {
+    defaultHeaders['x-firebase-uid'] = currentFirebaseUid;
+  }
 
   return fetch(getApiUrl(path), {
     ...options,

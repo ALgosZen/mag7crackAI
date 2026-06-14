@@ -19,7 +19,7 @@ import PhoneLogin from "./components/Auth/PhoneLogin.tsx";
 import SignupForm from "./components/Auth/SignupForm.tsx";
 import { User, InterviewSession, SubscriptionTier, RoleTarget, InterviewType } from "./types.js";
 import { CircleAlert, HelpCircle } from "lucide-react";
-import { apiFetch } from "./api.ts";
+import { apiFetch, setAuthContext } from "./api.ts";
 import { onIdTokenChanged, User as FirebaseUser } from "firebase/auth";
 import { auth } from "./lib/firebase";
 
@@ -47,11 +47,13 @@ export default function App() {
         const token = await fUser.getIdToken();
         setFirebaseUser(fUser);
         setIdToken(token);
+        setAuthContext(token, fUser.uid); // Update global API context
         // If we have a firebase user but no app user, we might need signup
         await syncWorkspaceData(token, fUser.uid);
       } else {
         setFirebaseUser(null);
         setIdToken(null);
+        setAuthContext(null, null); // Clear global API context
         setUser(null);
         setAuthStep("LOGIN");
         setIsSyncing(false);
@@ -68,12 +70,7 @@ export default function App() {
 
     try {
       setIsSyncing(true);
-      const headers: any = { Authorization: `Bearer ${activeToken}` };
-      if (activeUid) {
-        headers['x-firebase-uid'] = activeUid;
-      }
-
-      const uRes = await apiFetch("/api/auth/me", { headers });
+      const uRes = await apiFetch("/api/auth/me");
 
       if (uRes.status === 404) {
         // User authenticated via Firebase but not in our DB yet
@@ -88,7 +85,7 @@ export default function App() {
       setUser(uJson);
       setAuthStep("AUTHENTICATED");
 
-      const sRes = await apiFetch("/api/sessions", { headers });
+      const sRes = await apiFetch("/api/sessions");
       if (!sRes.ok) throw new Error("Could not list historic interview sessions.");
       const sJson = await sRes.json();
       setSessions(sJson);
@@ -110,9 +107,6 @@ export default function App() {
       setIsSyncing(true);
       const res = await apiFetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${idToken}`
-        },
         body: JSON.stringify({
           name: data.name,
           email: data.email || null,
@@ -136,15 +130,11 @@ export default function App() {
     }
   };
 
-  // 3. Event Handlers (Updated to include Token)
+  // 3. Event Handlers (Headers now auto-injected by apiFetch)
   const handleTierChange = async (tier: SubscriptionTier) => {
     try {
       const res = await apiFetch("/api/auth/tier", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${idToken}`
-        },
         body: JSON.stringify({ tier })
       });
       if (!res.ok) throw new Error("Failed to patch subscription tier.");
@@ -160,19 +150,21 @@ export default function App() {
       setIsSyncing(true);
       const res = await apiFetch("/api/sessions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${idToken}`
-        },
         body: JSON.stringify({ roleTarget, type })
       });
-      if (!res.ok) throw new Error("Failed to initialize challenge.");
-      const newSession: InterviewSession = await res.json();
-      setSessions((prev) => [newSession, ...prev]);
-      setActiveSession(newSession);
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to initialize challenge.");
+      }
+
+      const data = await res.json();
+      setSessions((prev) => [data, ...prev]);
+      setActiveSession(data);
       setCurrentView(type === "CODING" ? "CODING" : "BEHAVIORAL");
     } catch (err) {
       console.error(err);
+      alert(err instanceof Error ? err.message : "Error starting challenge. Please try again.");
     } finally {
       setIsSyncing(false);
     }
@@ -183,8 +175,7 @@ export default function App() {
     try {
       setIsSyncing(true);
       const res = await apiFetch("/api/sessions/clear", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${idToken}` }
+        method: "POST"
       });
       if (!res.ok) throw new Error("Failed to clear.");
       setSessions([]);
@@ -208,7 +199,7 @@ export default function App() {
   };
 
   // 4. Conditional Rendering based on Auth Step
-  if (isSyncing) {
+  if (isSyncing && authStep !== "LOGIN") {
     return (
       <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-6" id="app-root-loader">
         <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -332,7 +323,7 @@ export default function App() {
               />
             )}
 
-            {currentView === "ADMIN_SETTINGS" && user && user.email.toLowerCase().includes("admin") && (
+            {currentView === "ADMIN_SETTINGS" && user && user.email?.toLowerCase().includes("admin") && (
               <AdminSettings />
             )}
           </>
@@ -354,4 +345,3 @@ export default function App() {
 }
 
 // © 2026 Mag7Crack.ai SaaS Core. All rights preserved.
-

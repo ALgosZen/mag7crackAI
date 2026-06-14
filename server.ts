@@ -269,9 +269,12 @@ app.post("/api/sessions", async (req: any, res) => {
         type,
         challengeId: challenge?.id || null,
         score: 0
+      },
+      include: {
+        challenge: true
       }
     });
-    res.status(201).json({ ...newSession, challenge });
+    res.status(201).json(newSession);
   } catch (error) {
     res.status(500).json({ error: "Failed to create session" });
   }
