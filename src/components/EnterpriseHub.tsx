@@ -164,7 +164,8 @@ Please verify your Gemini key settings relative to this instance and try again.`
               <PayPalButtonSim 
                 amount={enterprisePrice} 
                 tierSymbol="ENTERPRISE" 
-                onSuccess={handlePaymentSuccess} 
+                firebaseUid={user.firebaseUid || ""}
+                onSuccess={handlePaymentSuccess}
               />
             </div>
 

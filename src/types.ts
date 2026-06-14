@@ -25,6 +25,18 @@ export interface InterviewSession {
   type: InterviewType;
   score: number;
   createdAt: string;
+  challenge?: MockChallenge; // Dynamic challenge data
+}
+
+export interface MockChallenge {
+  id: string;
+  roleTarget: RoleTarget;
+  type: InterviewType;
+  title: string;
+  description: string;
+  starterCode?: string;
+  difficulty?: string;
+  category?: string;
 }
 
 export interface CodingSubmission {

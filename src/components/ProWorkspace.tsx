@@ -196,7 +196,8 @@ Failed to compile system architecture schema via Gemini. Please verify Gemini AP
               <PayPalButtonSim 
                 amount={proPrice} 
                 tierSymbol="PRO" 
-                onSuccess={handlePaymentSuccess} 
+                firebaseUid={user.firebaseUid || ""}
+                onSuccess={handlePaymentSuccess}
               />
             </div>
 

@@ -208,11 +208,11 @@ export default function App() {
   };
 
   // 4. Conditional Rendering based on Auth Step
-  if (isSyncing && !user && authStep !== "LOGIN") {
+  if (isSyncing) {
     return (
       <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-6" id="app-root-loader">
-        <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm font-semibold text-zinc-500 mt-4">Bundling FAANG Mock Interview Workspace...</p>
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sm font-semibold text-zinc-500 mt-4">Initializing FAANG Prep Environment...</p>
       </div>
     );
   }

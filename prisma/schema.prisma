@@ -50,6 +50,8 @@ model InterviewSession {
   user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   roleTarget           RoleTarget
   type                 InterviewType
+  challengeId          String?                // Link to the cached challenge
+  challenge            MockChallenge?         @relation(fields: [challengeId], references: [id])
   score                Int                    @default(0) // Estimated readiness score out of 100
   createdAt            DateTime               @default(now())
   codingSubmissions    CodingSubmission[]
@@ -57,6 +59,22 @@ model InterviewSession {
 
   @@index([userId])
   @@map("interview_sessions")
+}
+
+model MockChallenge {
+  id              String           @id @default(uuid())
+  roleTarget      RoleTarget
+  type            InterviewType
+  title           String
+  description     String           @db.Text
+  starterCode     String?          @db.Text // Only for coding
+  difficulty      String?          // Easy, Medium, Hard
+  category        String?          // e.g. "Recursion", "Conflict Resolution"
+  createdAt       DateTime         @default(now())
+  sessions        InterviewSession[]
+
+  @@index([roleTarget, type])
+  @@map("mock_challenges")
 }
 
 model CodingSubmission {

@@ -11,10 +11,11 @@ import { apiFetch } from "../api.ts";
 interface PayPalButtonSimProps {
   amount: number;
   tierSymbol: "PRO" | "ENTERPRISE";
+  firebaseUid: string; // Added to link web checkout to specific user
   onSuccess: (orderId: string, payerEmail: string) => void;
 }
 
-export default function PayPalButtonSim({ amount, tierSymbol, onSuccess }: PayPalButtonSimProps) {
+export default function PayPalButtonSim({ amount, tierSymbol, firebaseUid, onSuccess }: PayPalButtonSimProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<"LOGIN" | "REVIEW" | "PROCESSING" | "SUCCESS">("LOGIN");
   const [email, setEmail] = useState("buyer-sandbox@faangprep.ai");
@@ -54,6 +55,7 @@ export default function PayPalButtonSim({ amount, tierSymbol, onSuccess }: PayPa
             payerEmail: email,
             tier: tierSymbol,
             amount: amount,
+            firebaseUid: firebaseUid // Critical for RevenueCat sync
           }),
         });
 

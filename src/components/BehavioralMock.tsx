@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { apiFetch } from "../api.ts";
 
+import STARRadar from "./STARRadar.tsx";
+
 interface BehavioralMockProps {
   session: InterviewSession;
   onBack: () => void;
@@ -614,6 +616,12 @@ export default function BehavioralMock({ session, onBack, onSubmitResults }: Beh
                   <span className="block text-[9px] font-bold text-purple-500 uppercase tracking-widest leading-none font-bold">Mock Grade</span>
                   <span className="text-2xl font-black text-purple-700">{evaluation.score}/100</span>
                 </div>
+              </div>
+
+              {/* STAR Radar Chart */}
+              <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-6 flex flex-col items-center">
+                <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-6">STAR Competency Heatmap</h4>
+                <STARRadar metrics={evaluation.gradingMetrics} />
               </div>
 
               {/* STAR Bar Scores Grids */}
