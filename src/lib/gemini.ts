@@ -42,13 +42,15 @@ export async function evaluateCodingSubmission(
   problemTitle: string,
   problemDescription: string,
   userCode: string,
-  language: string = "python"
+  language: string = "python",
+  idealSolution?: string
 ): Promise<CodingEvaluationResult> {
   try {
     const ai = getGemini();
     const systemInstruction = `
       You are a Principal Software Engineer conducting a mock coding interview for a top FAANG company.
       Analyze the candidate's code submission based on absolute accuracy, edge-case coverage, code elegance, and optimal Big-O complexity.
+      ${idealSolution ? `Compare the candidate's code against this IDEAL optimal solution:\n${idealSolution}\n` : ""}
       You MUST respond with a structured JSON object containing:
       - timeComplexity: string representing Big-O (e.g. "O(N log N)")
       - spaceComplexity: string representing Big-O (e.g. "O(N)")
@@ -141,7 +143,8 @@ interface BehavioralEvaluationResult {
 export async function evaluateBehavioralResponse(
   questionText: string,
   audioTranscript: string,
-  faceImage?: string
+  faceImage?: string,
+  idealAnswer?: string
 ): Promise<BehavioralEvaluationResult> {
   try {
     const ai = getGemini();
@@ -149,6 +152,7 @@ export async function evaluateBehavioralResponse(
       You are an expert HR Interviewer conducting a mock behavioral round for a FAANG company.
       Evaluate the candidate's response transcript using the STAR (Situation, Task, Action, Result) methodology.
       Additionally, if a photo of their face/webcam feed is provided, analyze their body language, facial expressions, and overall confidence (smile, eye contact, posture, nervousness).
+      ${idealAnswer ? `Compare their response against this IDEAL high-scoring STAR answer:\n${idealAnswer}\n` : ""}
       Provide granular score grading (0-10 integer representing level of completeness) across five metrics:
       - situationTask: Clear presentation of the context/conflict, challenge, and goals.
       - action: Specific steps taken by the candidate.
@@ -326,6 +330,3 @@ export async function evaluateResumeAndGrade(
 }
 
 // © 2026 Mag7Crack.ai SaaS Core. All rights preserved.
-
-
-

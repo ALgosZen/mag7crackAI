@@ -65,9 +65,10 @@ model MockChallenge {
   id              String           @id @default(uuid())
   roleTarget      RoleTarget
   type            InterviewType
-  title           String
+  title           String           @unique
   description     String           @db.Text
   starterCode     String?          @db.Text // Only for coding
+  idealSolution   String?          @db.Text // Ideal answer or code solution for AI comparison
   difficulty      String?          // Easy, Medium, Hard
   category        String?          // e.g. "Recursion", "Conflict Resolution"
   createdAt       DateTime         @default(now())

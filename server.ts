@@ -284,9 +284,21 @@ app.post("/api/sessions/:id/submit-coding", async (req, res) => {
   const { id: sessionId } = req.params;
   const { problemId, problemTitle, problemDescription, userCode, language, hintsUsed, timeTaken } = req.body;
   try {
-    const session = await prisma.interviewSession.findUnique({ where: { id: sessionId } });
+    const session = await prisma.interviewSession.findUnique({
+      where: { id: sessionId },
+      include: { challenge: true }
+    });
+
     if (!session) return res.status(404).json({ error: "Session not found." });
-    const evaluation = await evaluateCodingSubmission(problemTitle, problemDescription, userCode, language);
+
+    // Provide the ideal solution to the AI evaluator for much higher precision grading
+    const evaluation = await evaluateCodingSubmission(
+      problemTitle,
+      problemDescription,
+      userCode,
+      language,
+      session.challenge?.idealSolution || undefined
+    );
     const hintPenalty = (hintsUsed || 0) * 5;
     let finalScore = Math.max(0, evaluation.score - hintPenalty);
     let level = "L3 (Junior)";
@@ -329,9 +341,20 @@ app.post("/api/sessions/:id/submit-behavioral", async (req, res) => {
   const { id: sessionId } = req.params;
   const { questionText, audioTranscript, faceImage } = req.body;
   try {
-    const session = await prisma.interviewSession.findUnique({ where: { id: sessionId } });
+    const session = await prisma.interviewSession.findUnique({
+      where: { id: sessionId },
+      include: { challenge: true }
+    });
+
     if (!session) return res.status(404).json({ error: "Session not found." });
-    const evaluation = await evaluateBehavioralResponse(questionText, audioTranscript, faceImage);
+
+    const evaluation = await evaluateBehavioralResponse(
+      questionText,
+      audioTranscript,
+      faceImage,
+      session.challenge?.idealSolution || undefined
+    );
+
     const response = await prisma.behavioralResponse.create({
       data: {
         sessionId,
