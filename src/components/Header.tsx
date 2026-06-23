@@ -14,8 +14,7 @@ interface HeaderProps {
   currentView: string;
   onTierChange: (tier: SubscriptionTier) => void;
   onLogout: () => void;
-  onLoginClick: () => void;
-  onViewChange: (view: "DASHBOARD" | "PRO_WORKSPACE" | "ENTERPRISE_HUB" | "ADMIN_SETTINGS") => void;
+  onViewChange: (view: "DASHBOARD" | "PRO_WORKSPACE" | "ENTERPRISE_HUB" | "ADMIN_SETTINGS" | "REQUEST_DEMO") => void;
 }
 
 export default function Header({ user, currentView, onTierChange, onLogout, onViewChange }: HeaderProps) {
@@ -27,21 +26,24 @@ export default function Header({ user, currentView, onTierChange, onLogout, onVi
         <div className="flex justify-between items-center h-16 gap-2">
 
           {/* Logo Brand */}
-          <div className="flex items-center space-x-2 shrink-0">
+          <button
+            onClick={() => onViewChange("DASHBOARD")}
+            className="flex items-center space-x-2 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          >
             <div className="bg-gradient-to-tr from-purple-600 to-indigo-600 p-1.5 rounded-lg text-white shadow-sm">
               <Award className="h-5 w-5" />
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col text-left">
               <span className="font-black text-sm sm:text-lg tracking-tight text-zinc-900 leading-none">
                 Mag7Crack.ai
               </span>
               {isDev && (
                 <span className="mt-0.5 text-[8px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-full uppercase w-fit">
-                  BETA-TEST
+                  BETA
                 </span>
               )}
             </div>
-          </div>
+          </button>
 
           {/* Middle Navigation Tabs (Scrollable on Mobile) */}
           {user && (
@@ -80,6 +82,18 @@ export default function Header({ user, currentView, onTierChange, onLogout, onVi
                 }`}
               >
                 Enterprise
+              </button>
+
+              <button
+                id="tab-request-demo"
+                onClick={() => onViewChange("REQUEST_DEMO")}
+                className={`px-2 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                  currentView === "REQUEST_DEMO"
+                    ? "bg-zinc-900 text-white shadow-sm"
+                    : "text-indigo-600 hover:bg-indigo-50"
+                }`}
+              >
+                Demo
               </button>
 
               {user.email && user.email.toLowerCase().includes("admin") && (

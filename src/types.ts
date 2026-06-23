@@ -12,6 +12,7 @@ export type InterviewType = 'CODING' | 'SYSTEM_DESIGN' | 'BEHAVIORAL';
 
 export interface User {
   id: string;
+  firebaseUid?: string;
   email: string;
   name: string;
   subscriptionTier: SubscriptionTier;

@@ -9,20 +9,26 @@ import path from "path";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import Stripe from "stripe";
-import { evaluateCodingSubmission, evaluateBehavioralResponse, evaluateSystemDesign, evaluateResumeAndGrade } from "./src/lib/gemini.js";
+import {
+  evaluateCodingSubmission,
+  evaluateBehavioralResponse,
+  evaluateSystemDesign,
+  evaluateResumeAndGrade,
+  getGemini
+} from "./src/lib/gemini.js";
 import { runChallengeAutoGenerator } from "./src/lib/autoGenerator.js";
-import { grantRevenueCatEntitlement, revokeRevenueCatEntitlement } from "./src/lib/revenuecat.js";
+import { grantRevenueCatEntitlement } from "./src/lib/revenuecat.js";
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const prisma = new PrismaClient();
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-02-24-preview",
+  apiVersion: "2025-01-27.alpha" as any,
 });
 
 // Handle Prisma connection for serverless environments
@@ -72,12 +78,6 @@ app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), asyn
         await grantRevenueCatEntitlement(firebaseUid, tier.toLowerCase());
         console.log(`[Stripe Webhook] Unlocked ${tier} for ${firebaseUid}`);
       }
-      break;
-
-    case "customer.subscription.deleted":
-      const subscription = event.data.object as Stripe.Subscription;
-      // You'd need to find the user by Stripe Customer ID here
-      // For brevity, we assume you've mapped stripeCustomerId in your schema
       break;
   }
 
@@ -144,8 +144,8 @@ app.post("/api/checkout/stripe/create-session", async (req: any, res) => {
 });
 
 // PayPal Checkout (Refactored to include RevenueCat sync)
-app.post("/api/paypal/checkout", async (req, res) => {
-  const { orderId, payerEmail, tier, firebaseUid } = req.body;
+app.post("/api/paypal/checkout", async (req: any, res) => {
+  const { tier, firebaseUid } = req.body;
 
   if (!tier || !firebaseUid) {
     return res.status(400).json({ error: "Missing required checkout parameters." });
@@ -222,11 +222,11 @@ app.post("/api/auth/tier", async (req, res) => {
   if (tier === "FREE" || tier === "PRO" || tier === "ENTERPRISE") {
     try {
       const updatedUser = await prisma.user.update({
-        where: { firebaseUid },
+        where: { firebaseUid: String(firebaseUid) },
         data: { subscriptionTier: tier }
       });
       // Sync to RC even for manual tier changes in DEV
-      await grantRevenueCatEntitlement(firebaseUid, tier.toLowerCase());
+      await grantRevenueCatEntitlement(String(firebaseUid), tier.toLowerCase());
       return res.json(updatedUser);
     } catch (error) {
       return res.status(500).json({ error: "Failed to update tier" });
@@ -242,7 +242,8 @@ app.get("/api/sessions", async (req: any, res) => {
     if (!user) return res.json([]);
     const sessions = await prisma.interviewSession.findMany({
       where: { userId: user.id },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: { challenge: true }
     });
     res.json(sessions);
   } catch (error) {
@@ -270,9 +271,7 @@ app.post("/api/sessions", async (req: any, res) => {
         challengeId: challenge?.id || null,
         score: 0
       },
-      include: {
-        challenge: true
-      }
+      include: { challenge: true }
     });
     res.status(201).json(newSession);
   } catch (error) {
@@ -282,23 +281,14 @@ app.post("/api/sessions", async (req: any, res) => {
 
 app.post("/api/sessions/:id/submit-coding", async (req, res) => {
   const { id: sessionId } = req.params;
-  const { problemId, problemTitle, problemDescription, userCode, language, hintsUsed, timeTaken } = req.body;
+  const { problemTitle, problemDescription, userCode, language, hintsUsed, timeTaken } = req.body;
   try {
     const session = await prisma.interviewSession.findUnique({
       where: { id: sessionId },
       include: { challenge: true }
     });
-
     if (!session) return res.status(404).json({ error: "Session not found." });
-
-    // Provide the ideal solution to the AI evaluator for much higher precision grading
-    const evaluation = await evaluateCodingSubmission(
-      problemTitle,
-      problemDescription,
-      userCode,
-      language,
-      session.challenge?.idealSolution || undefined
-    );
+    const evaluation = await evaluateCodingSubmission(problemTitle, problemDescription, userCode, language, session.challenge?.idealSolution || undefined);
     const hintPenalty = (hintsUsed || 0) * 5;
     let finalScore = Math.max(0, evaluation.score - hintPenalty);
     let level = "L3 (Junior)";
@@ -306,7 +296,7 @@ app.post("/api/sessions/:id/submit-coding", async (req, res) => {
     const submission = await prisma.codingSubmission.create({
       data: {
         sessionId,
-        problemId,
+        problemId: session.challengeId || "manual",
         userCode,
         timeComplexity: evaluation.timeComplexity,
         spaceComplexity: evaluation.spaceComplexity,
@@ -345,16 +335,8 @@ app.post("/api/sessions/:id/submit-behavioral", async (req, res) => {
       where: { id: sessionId },
       include: { challenge: true }
     });
-
     if (!session) return res.status(404).json({ error: "Session not found." });
-
-    const evaluation = await evaluateBehavioralResponse(
-      questionText,
-      audioTranscript,
-      faceImage,
-      session.challenge?.idealSolution || undefined
-    );
-
+    const evaluation = await evaluateBehavioralResponse(questionText, audioTranscript, faceImage, session.challenge?.idealSolution || undefined);
     const response = await prisma.behavioralResponse.create({
       data: {
         sessionId,
@@ -379,7 +361,7 @@ app.get("/api/sessions/:id/details", async (req, res) => {
   try {
     const session = await prisma.interviewSession.findUnique({
       where: { id: sessionId },
-      include: { codingSubmissions: true, behavioralResponses: true }
+      include: { codingSubmissions: true, behavioralResponses: true, challenge: true }
     });
     if (!session) return res.status(404).json({ error: "Not found" });
     res.json({ session, codingSubmissions: session.codingSubmissions, behavioralResponses: session.behavioralResponses });

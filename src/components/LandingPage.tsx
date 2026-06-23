@@ -11,9 +11,10 @@ import { Award, Code, Users, Star, Play, Sparkles, Target, Zap, Shield, HelpCirc
 
 interface LandingPageProps {
   onLogin: (candidateName: string, candidateEmail: string) => void;
+  onDemoClick: () => void;
 }
 
-export default function LandingPage({ onLogin }: LandingPageProps) {
+export default function LandingPage({ onLogin, onDemoClick }: LandingPageProps) {
   const [name, setName] = useState("Jane Doe");
   const [email, setEmail] = useState("alphabizu@gmail.com");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,12 +57,12 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             <Play className="w-4 h-4 fill-white" />
             <span>Launch Free Simulator</span>
           </a>
-          <a
-            href="#features-container"
+          <button
+            onClick={onDemoClick}
             className="w-full sm:w-auto bg-white border border-zinc-200 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 font-bold py-3 px-8 rounded-xl text-sm flex items-center justify-center space-x-2 cursor-pointer"
           >
-            <span>Explore Core Capabilities</span>
-          </a>
+            <span>Request Enterprise Demo</span>
+          </button>
         </div>
       </section>
 

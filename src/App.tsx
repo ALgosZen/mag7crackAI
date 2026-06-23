@@ -12,9 +12,11 @@ import Dashboard from "./components/Dashboard.tsx";
 import CodingMock from "./components/CodingMock.tsx";
 import BehavioralMock from "./components/BehavioralMock.tsx";
 import SessionDetails from "./components/SessionDetails.tsx";
+import LandingPage from "./components/LandingPage.tsx";
 import ProWorkspace from "./components/ProWorkspace.tsx";
 import EnterpriseHub from "./components/EnterpriseHub.tsx";
 import AdminSettings from "./components/AdminSettings.tsx";
+import RequestDemo from "./components/RequestDemo.tsx";
 import PhoneLogin from "./components/Auth/PhoneLogin.tsx";
 import SignupForm from "./components/Auth/SignupForm.tsx";
 import { User, InterviewSession, SubscriptionTier, RoleTarget, InterviewType } from "./types.js";
@@ -23,7 +25,7 @@ import { apiFetch, setAuthContext } from "./api.ts";
 import { onIdTokenChanged, User as FirebaseUser } from "firebase/auth";
 import { auth } from "./lib/firebase";
 
-type RouteView = "DASHBOARD" | "CODING" | "BEHAVIORAL" | "DETAILS" | "PRO_WORKSPACE" | "ENTERPRISE_HUB" | "ADMIN_SETTINGS";
+type RouteView = "DASHBOARD" | "CODING" | "BEHAVIORAL" | "DETAILS" | "PRO_WORKSPACE" | "ENTERPRISE_HUB" | "ADMIN_SETTINGS" | "REQUEST_DEMO";
 type AuthStep = "LOGIN" | "SIGNUP" | "AUTHENTICATED";
 
 export default function App() {
@@ -210,8 +212,34 @@ export default function App() {
 
   if (authStep === "LOGIN") {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-purple-100 via-zinc-50 to-indigo-50">
-        <PhoneLogin onAuthenticated={() => setAuthStep("SIGNUP")} />
+      <div className="min-h-screen bg-zinc-50 flex flex-col text-zinc-900 selection:bg-purple-100">
+        <Header
+          user={null}
+          currentView={currentView}
+          onTierChange={handleTierChange}
+          onLogout={handleLogout}
+          onViewChange={(view) => setCurrentView(view)}
+        />
+        <main className="flex-1">
+          {currentView === "REQUEST_DEMO" ? (
+            <div className="py-12">
+              <RequestDemo onBack={() => setCurrentView("DASHBOARD")} />
+            </div>
+          ) : (
+            <div className="space-y-12">
+              <LandingPage
+                onLogin={() => {
+                  const authSec = document.getElementById("auth-card");
+                  if (authSec) authSec.scrollIntoView({ behavior: "smooth" });
+                }}
+                onDemoClick={() => setCurrentView("REQUEST_DEMO")}
+              />
+              <section id="auth-card" className="max-w-md mx-auto px-4 pb-24">
+                <PhoneLogin onAuthenticated={() => setAuthStep("SIGNUP")} />
+              </section>
+            </div>
+          )}
+        </main>
       </div>
     );
   }
@@ -247,9 +275,6 @@ export default function App() {
         currentView={currentView}
         onTierChange={handleTierChange} 
         onLogout={handleLogout}
-        onLoginClick={() => {
-          // This button won't be visible in authStep !== AUTHENTICATED
-        }}
         onViewChange={(view) => {
           setCurrentView(view);
         }}
@@ -325,6 +350,10 @@ export default function App() {
 
             {currentView === "ADMIN_SETTINGS" && user && user.email?.toLowerCase().includes("admin") && (
               <AdminSettings />
+            )}
+
+            {currentView === "REQUEST_DEMO" && (
+              <RequestDemo onBack={() => setCurrentView("DASHBOARD")} />
             )}
           </>
         )}
